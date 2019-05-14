@@ -27,6 +27,11 @@ class MainActivity : AppCompatActivity() {
             val buscarTextoAt = BuscarTextoAt()
             buscarTextoAt.execute(constantes.URL_BASE + "texto.php")
         }
+
+        buscarData.setOnClickListener {
+            val buscarData = BuscarData()
+            buscarData.execute(constantes.URL_BASE + "data.php")
+        }
     }
 
     private inner class BuscarTextoAt: AsyncTask<String, Int, String>(){
@@ -79,6 +84,59 @@ class MainActivity : AppCompatActivity() {
             super.onProgressUpdate(*values)
 
             values[0]?.apply { progressBar.progress = this }
+        }
+    }
+
+    private inner class BuscarData: AsyncTask<String, Int, String>(){
+        override fun onPreExecute() {
+            super.onPreExecute()
+            Toast.makeText(baseContext,"Buscando Data no WebService", Toast.LENGTH_SHORT)
+            pb_carregando.visibility = View.VISIBLE
+        }
+
+        override fun doInBackground(vararg params: String?): String {
+            val url = params[0]
+
+            val stringBufferResposta: StringBuffer = StringBuffer()
+
+            try {
+                val conexao = URL(url).openConnection() as HttpURLConnection
+
+                if(conexao.responseCode == HttpURLConnection.HTTP_OK){
+                    val inpuStream = conexao.inputStream
+
+                    val bufferedReader = BufferedInputStream(inpuStream).bufferedReader()
+
+                    val respostaList = bufferedReader.readLines()
+
+                    respostaList.forEach { stringBufferResposta.append(it) }
+                }
+            } catch (ioe: IOException){
+                Toast.makeText(baseContext,"Erro na conexao", Toast.LENGTH_SHORT)
+            }
+
+            for(i in 1..10){
+                publishProgress(i)
+                sleep(500)
+            }
+
+            return stringBufferResposta.toString()
+        }
+
+        override fun onPostExecute(result: String?) {
+            super.onPostExecute(result)
+
+            Toast.makeText(baseContext,"Texto recuperado com sucesso", Toast.LENGTH_SHORT)
+
+            tv_data.text = result
+
+            pb_carregando.visibility = View.GONE
+        }
+
+        override fun onProgressUpdate(vararg values: Int?) {
+            super.onProgressUpdate(*values)
+
+            values[0]?.apply { pb_carregando.progress = this }
         }
     }
 }
